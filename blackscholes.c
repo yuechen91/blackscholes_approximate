@@ -497,27 +497,26 @@ fptype error_predit(fptype in_error[5],fptype out_error,int iter, int protect[5]
 */
 fptype error_threshold=0.1;
 
-void error_config(fptype out_error, int *protect){
+void error_config(fptype out_error, int protect[5]){
 	for(int i=0;i<5;i++){
-		cout<<"protect"<<i<<" = "<<*protect<<endl;
-		protect++;
+		cout<<"protect"<<i<<" = "<<protect[i]<<endl;
 	}
 	cout<<"----------------------"<<endl;
 	cout<<"output_error = "<<out_error<<endl;
 	cout<<"++++++++++++++++++++++"<<endl;
 	cout<<endl;
+
 	if(out_error >= error_threshold){ //exceed error threshold
 		for(int i=0;i<5;i++){  //add protection
-			*protect++;
-			protect++;
+			protect[i]=protect[i]+2;
 		}
 	}
-	else if((error_threshold - out_error)>0.01){ //output error is below error threshold
+	else if((error_threshold - out_error) > 0.01){ //output error is below error threshold
 		for(int i=0;i<5;i++){ //reduce protection
-			*protect--;
-			protect++;
+			protect[i]--;
 		}
 	}
+
 }
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
@@ -537,7 +536,7 @@ int bs_thread(void *tid_ptr) {
     int end = start + (numOptions / nThreads);
     iter=0;
     int protect[5]={3,3,3,3,3};
-    int *p_protect= &protect[0];
+
     int re_execute=0;
 //    float error[];
 //    int protect[][5];
@@ -554,61 +553,25 @@ int bs_thread(void *tid_ptr) {
             price = BlkSchlsEqEuroNoDiv( sptprice[i], strike[i],
                                          rate[i], volatility[i], otime[i], 
                                          otype[i], 0);
-	    cout<<"sptprice ="<<sptprice[i]<<endl;
-	    cout<<"strike ="<<strike[i]<<endl;
-	    cout<<"rate ="<<rate[i]<<endl;
-	    cout<<"volatility ="<<volatility[i]<<endl;
-	    cout<<"otime ="<<otime[i]<<endl;
-	    cout<<"------------------------"<<endl;
+//	    cout<<"sptprice ="<<sptprice[i]<<endl;
+//	    cout<<"strike ="<<strike[i]<<endl;
+//	    cout<<"rate ="<<rate[i]<<endl;
+//	    cout<<"volatility ="<<volatility[i]<<endl;
+//	    cout<<"otime ="<<otime[i]<<endl;
+//	    cout<<"------------------------"<<endl;
 
-/*	    if(sptprice[i] < 50 || strike[i] < 50){
-		    for(int i = 0; i < 5; i++){
-			    protect[i] = 3;
-		    }
-//		    protect[5]={4,4,4,4,4};
-	    }
-//	    else if(sptprice[i] > 100 || strike[i] > 100){
-//		    for(int i = 0; i < 5; i++){
-//			    protect[i] = 3;
-//		    }
-//	    }
-	    else{
-		    for(int i = 0; i < 5; i++){
-			    protect[i] = 1;
-		    }
-	    }
-
-
-	    if(i==start+1 || i==start+2||i==start){
-		    for(int i = 0; i < 5; i++){
-			    protect[i] = 3;
-		    }
-//		    protect[5]={4,4,4,4,4};
-	    }
-//	    else if(sptprice[i] > 100 || strike[i] > 100){
-//		    for(int i = 0; i < 5; i++){
-//			    protect[i] = 3;
-//		    }
-//	    }
-	    else{
-		    for(int i = 0; i < 5; i++){
-			    protect[i] = 1;
-		    }
-	    }
-*/
 	    fptype approx_sptprice=approx(sptprice[i],protect[0]);
 	    fptype approx_strike=approx(strike[i],protect[1]);
 	    fptype approx_rate=approx(rate[i],protect[2]);
 	    fptype approx_volatility=approx(volatility[i],protect[3]);
 	    fptype approx_otime=approx(otime[i],protect[4]);
-//	    cout<<"otime diff="<<otime[i]-approx_otime<<endl<<endl;
 
-	    cout<<"approx sptprice ="<<approx_sptprice<<endl;
-	    cout<<"approx strike ="<<approx_strike<<endl;
-	    cout<<"approx rate ="<<approx_rate<<endl;
-	    cout<<"approx volatility ="<<approx_volatility<<endl;
-	    cout<<"approx otime ="<<approx_otime<<endl;
-	    cout<<"-------------------------"<<endl;
+//	    cout<<"approx sptprice ="<<approx_sptprice<<endl;
+//	    cout<<"approx strike ="<<approx_strike<<endl;
+//	    cout<<"approx rate ="<<approx_rate<<endl;
+//	    cout<<"approx volatility ="<<approx_volatility<<endl;
+//	    cout<<"approx otime ="<<approx_otime<<endl;
+//	    cout<<"-------------------------"<<endl;
 
 	    fptype error_sptprice=abs(sptprice[i]-approx_sptprice)/sptprice[i];
 	    fptype error_strike=abs(strike[i]-approx_strike)/strike[i];
@@ -616,11 +579,11 @@ int bs_thread(void *tid_ptr) {
 	    fptype error_volatility=abs(volatility[i]-approx_volatility)/volatility[i];
 	    fptype error_otime=abs(otime[i]-approx_otime)/otime[i];
 
-	    cout<<"sptprice error="<<error_sptprice<<endl;
-	    cout<<"strike error="<<error_strike<<endl;
-	    cout<<"rate error="<<error_rate<<endl;
-	    cout<<"volatility error="<<error_volatility<<endl;
-	    cout<<"otime error="<<error_otime<<endl;
+//	    cout<<"sptprice error="<<error_sptprice<<endl;
+//	    cout<<"strike error="<<error_strike<<endl;
+//	    cout<<"rate error="<<error_rate<<endl;
+//	    cout<<"volatility error="<<error_volatility<<endl;
+//	    cout<<"otime error="<<error_otime<<endl;
 
 	    fptype in_error[5]= {error_sptprice,error_strike,error_rate,error_volatility,error_otime};
 
@@ -628,12 +591,10 @@ int bs_thread(void *tid_ptr) {
                                          approx_rate, approx_volatility, approx_otime, 
                                          otype[i], 0);
 	    fptype out_error=abs(price-approx_price)/price;
-	    cout<<"price ="<<price<<endl;
-	    cout<<"approx_price ="<<approx_price<<endl;
-//	    cout<<"result diff="<<abs(price-approx_price)/price<<endl<<endl;
-//	    if(error_predit(in_error,out_error,iter,protect)!=0)
-//		    iter++;
-	    error_config(out_error,p_protect);
+//	    cout<<"price ="<<price<<endl;
+//	    cout<<"approx_price ="<<approx_price<<endl;
+
+	    error_config(out_error,protect);//config next cycle's approximation
 	   
     	    if(out_error>=error_threshold){
 		re_execute++;
