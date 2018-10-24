@@ -495,7 +495,38 @@ fptype error_predit(fptype in_error[5],fptype out_error,int iter, int protect[5]
 	return predit_out;
 }
 */
-fptype error_threshold=0.1;
+#define history_size 1000
+fptype error_threshold = 0.1;
+fptype out_error_history[history_size];
+int itemCount = 0;
+int front = 0;
+int rear = -1;
+bool isFull(){
+	return itemCount == history_size;
+}
+bool isEmpty(){
+	return itemCount ==0;
+}
+void enqueue(fptype data){
+	if(!isFull()){
+		if(rear == history_size-1){
+			rear = -1;
+		}
+		out_error_history[++rear] = data;
+		itemCount++;
+	}
+}
+
+fptype dequeue(){
+	fptype data = out_error_history[front++];
+
+	if(front == history_size){
+		front = 0;
+	}
+	itemCount--;
+	return data;
+}
+
 
 void error_config(fptype out_error, int protect[5]){
 /*	for(int i=0;i<5;i++){
@@ -506,15 +537,31 @@ void error_config(fptype out_error, int protect[5]){
 	cout<<"++++++++++++++++++++++"<<endl;
 	cout<<endl;
 */
-	if(out_error >= error_threshold){ //exceed error threshold
-		for(int i=0;i<5;i++){  //add protection
-			protect[i]=protect[i]+2;
-		}
+	if(!isFull()){
+		enqueue(out_error);
 	}
-	else if((error_threshold - out_error) > 0.01){ //output error is below error threshold
-		if(protect[0]>1){
-			for(int i=0;i<5;i++){ //reduce protection
-				protect[i]--;
+	else {
+		dequeue();
+		enqueue(out_error);
+	}
+
+	if(isFull()){
+		fptype sum_his_error=0;
+		for(int i=0; i<history_size; i++){
+			sum_his_error=sum_his_error + out_error_history[i];
+		}
+		fptype average_his_error=sum_his_error / history_size;
+
+		if(average_his_error >= error_threshold){ //exceed error threshold
+			for(int i=0;i<5;i++){  //add protection
+				protect[i]=protect[i]+2;
+			}
+		}
+		else if((error_threshold - average_his_error) > 0.01){ //output error is below error threshold
+			if(protect[0]>1){
+				for(int i=0;i<5;i++){ //reduce protection
+					protect[i]--;
+				}
 			}
 		}
 	}
@@ -599,6 +646,7 @@ int bs_thread(void *tid_ptr) {
 		    out_error = abs( price - approx_price ) / price;
 	    
 	    sum_error = sum_error + out_error;
+
 //	    cout<<"sum_error ="<<sum_error<<endl;
 //	    cout<<"out_error ="<<out_error<<endl;
 //	    cout<<endl;
@@ -606,7 +654,7 @@ int bs_thread(void *tid_ptr) {
 //	    cout<<"price ="<<price<<endl;
 //	    cout<<"approx_price ="<<approx_price<<endl;
 
-//	    error_config(out_error,protect);//config next cycle's approximation
+	    error_config(out_error,protect);//config next cycle's approximation
 	   
 /*    	    if(out_error>=error_threshold){
 		re_execute++;
