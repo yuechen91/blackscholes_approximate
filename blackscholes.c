@@ -498,22 +498,24 @@ fptype error_predit(fptype in_error[5],fptype out_error,int iter, int protect[5]
 fptype error_threshold=0.1;
 
 void error_config(fptype out_error, int protect[5]){
-	for(int i=0;i<5;i++){
+/*	for(int i=0;i<5;i++){
 		cout<<"protect"<<i<<" = "<<protect[i]<<endl;
 	}
 	cout<<"----------------------"<<endl;
 	cout<<"output_error = "<<out_error<<endl;
 	cout<<"++++++++++++++++++++++"<<endl;
 	cout<<endl;
-
+*/
 	if(out_error >= error_threshold){ //exceed error threshold
 		for(int i=0;i<5;i++){  //add protection
 			protect[i]=protect[i]+2;
 		}
 	}
 	else if((error_threshold - out_error) > 0.01){ //output error is below error threshold
-		for(int i=0;i<5;i++){ //reduce protection
-			protect[i]--;
+		if(protect[0]>1){
+			for(int i=0;i<5;i++){ //reduce protection
+				protect[i]--;
+			}
 		}
 	}
 
@@ -538,7 +540,7 @@ int bs_thread(void *tid_ptr) {
     int protect[5]={3,3,3,3,3};
 
     int re_execute=0;
-//    float error[];
+    double sum_error=0;
 //    int protect[][5];
     for (j=0; j<NUM_RUNS; j++) {
 #ifdef ENABLE_OPENMP
@@ -590,17 +592,27 @@ int bs_thread(void *tid_ptr) {
 	    approx_price = BlkSchlsEqEuroNoDiv_approx( approx_sptprice, approx_strike,
                                          approx_rate, approx_volatility, approx_otime, 
                                          otype[i], 0);
-	    fptype out_error=abs(price-approx_price)/price;
+	    fptype out_error;
+	    if(price==0)
+		    out_error=0;
+	    else
+		    out_error = abs( price - approx_price ) / price;
+	    
+	    sum_error = sum_error + out_error;
+//	    cout<<"sum_error ="<<sum_error<<endl;
+//	    cout<<"out_error ="<<out_error<<endl;
+//	    cout<<endl;
+//
 //	    cout<<"price ="<<price<<endl;
 //	    cout<<"approx_price ="<<approx_price<<endl;
 
-	    error_config(out_error,protect);//config next cycle's approximation
+//	    error_config(out_error,protect);//config next cycle's approximation
 	   
-    	    if(out_error>=error_threshold){
+/*    	    if(out_error>=error_threshold){
 		re_execute++;
 		cout<<"reexecution times ="<<re_execute<<endl;
     	    }
-
+*/
 	    prices[i] = price;
             
 //#ifdef ERR_CHK   
@@ -612,8 +624,14 @@ int bs_thread(void *tid_ptr) {
             }
 //#endif
         }
+	if(j==0){
+//		cout<<"sum_error ="<<sum_error<<endl;
+//		cout<<"end - start ="<<(end-start)<<endl;
+		cout<<"total error ="<<sum_error/(end-start)<<endl;
+		sum_error=0;
+	}
     }
- 
+
     return 0;
 }
 
