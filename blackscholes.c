@@ -233,6 +233,7 @@ void print_xmm(fptype in, char* s) {
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
+/*
 void error_injection(int *a,int rate) 
 {
 //	cout<<hex<<"original a="<<*a<<endl;
@@ -291,6 +292,84 @@ void error_injection(int *a,int rate)
 	*a+=*d;
 //	cout<<hex<<"approx a="<<*a<<endl<<endl;
 }
+*/
+
+void error_injection(int *a,int rate) 
+{
+//	cout<<hex<<"original a="<<*a<<endl;
+	unsigned int protect;//=0xfffff000;//e
+	unsigned int error;//=  0x00000fff;//1
+	switch (rate){
+		case 0:{
+			       protect=0xfff00000;
+			       error  =0x000fffff;
+			       break;
+		       }
+		case 1:{
+			       protect=0xfffc0000;
+			       error  =0x0003ffff;
+			       break;
+		       }
+		case 2:{
+			       protect=0xffff0000;
+			       error  =0x0000ffff;
+			       break;
+		       }
+		case 3:{
+			       protect=0xffffc000;
+			       error  =0x00003fff;
+			       break;
+		       }
+		case 4:{
+			       protect=0xfffff000;
+			       error  =0x00000fff;
+			       break;
+		       }
+		case 5:{
+			       protect=0xfffffc00;
+			       error  =0x000003ff;
+			       break;
+		       }
+		case 6:{
+			       protect=0xffffff00;
+			       error  =0x000000ff;
+			       break;
+		       }
+		case 7:{
+			       protect=0xffffffc0;
+			       error  =0x0000003f;
+			       break;
+		       }
+		case 8:{
+			       protect=0xfffffff0;
+			       error  =0x0000000f;
+			       break;
+		       }
+		case 9:{
+			       protect=0xfffffffc;
+			       error  =0x00000003;
+			       break;
+		       }
+		
+		default:{//full protection
+			       protect=0xffffffff;
+			       error  =0x00000000;
+			       break;
+			}
+	}
+	float c=*a;
+	int *d=(int *)&c;
+
+	unsigned int upper=  0x00000000;//1
+	*a&=protect;
+	*d&=error;
+	unsigned int num =upper;
+	*d|=num;
+	*a+=*d;
+//	cout<<hex<<"approx a="<<*a<<endl<<endl;
+}
+
+
 
 fptype approx(float a,int rate) 
 {
@@ -495,7 +574,7 @@ fptype error_predit(fptype in_error[5],fptype out_error,int iter, int protect[5]
 	return predit_out;
 }
 */
-#define history_size 1000
+#define history_size 10
 fptype error_threshold = 0.1;
 fptype out_error_history[history_size];
 int itemCount = 0;
