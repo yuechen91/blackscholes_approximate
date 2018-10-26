@@ -574,7 +574,7 @@ fptype error_predit(fptype in_error[5],fptype out_error,int iter, int protect[5]
 	return predit_out;
 }
 */
-#define history_size 10
+#define history_size 5
 fptype error_threshold = 0.1;
 fptype out_error_history[history_size];
 int itemCount = 0;
@@ -650,6 +650,32 @@ void error_config(fptype out_error, int protect[5]){
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
+int protection_to_length(int protect){
+	
+       switch(protect){
+	       case 0 : return 12;
+
+	       case 1 : return 14;
+
+	       case 2 : return 16;
+
+	       case 3 : return 18;
+
+	       case 4 : return 20;
+
+	       case 5 : return 22;
+
+	       case 6 : return 24;
+
+	       case 7 : return 26;
+
+	       case 8 : return 28;
+
+	       case 9 : return 30;
+
+	       default : return 32;
+       }	       
+}
 #ifdef WIN32
 DWORD WINAPI bs_thread(LPVOID tid_ptr){
 #else
@@ -667,6 +693,7 @@ int bs_thread(void *tid_ptr) {
 
     int re_execute=0;
     double sum_error=0;
+    long int transmitted_bits = 0;
 //    int protect[][5];
     for (j=0; j<NUM_RUNS; j++) {
 #ifdef ENABLE_OPENMP
@@ -725,6 +752,7 @@ int bs_thread(void *tid_ptr) {
 		    out_error = abs( price - approx_price ) / price;
 	    
 	    sum_error = sum_error + out_error;
+	    transmitted_bits = transmitted_bits + protection_to_length(protect[0]);
 
 //	    cout<<"sum_error ="<<sum_error<<endl;
 //	    cout<<"out_error ="<<out_error<<endl;
@@ -755,7 +783,9 @@ int bs_thread(void *tid_ptr) {
 //		cout<<"sum_error ="<<sum_error<<endl;
 //		cout<<"end - start ="<<(end-start)<<endl;
 		cout<<"total error ="<<sum_error/(end-start)<<endl;
+		cout<<"total transmitted bits ="<<transmitted_bits<<endl;
 		sum_error=0;
+		transmitted_bits=0;
 	}
     }
 
